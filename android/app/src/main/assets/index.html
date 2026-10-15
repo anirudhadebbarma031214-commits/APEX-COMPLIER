@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#070914"><title>APEX HTML COMPILER</title>
+<style>
+:root{--bg:#070914;--panel:#101426;--line:#242d4b;--cyan:#00eaff;--purple:#c43cff;--text:#f4f7ff;--muted:#98a5c5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#131a3a 0,#070914 55%);color:var(--text);font:14px system-ui,Arial,sans-serif;min-height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);background:#080b18ed;position:sticky;top:0;z-index:3}
+.logo{width:44px;height:44px;object-fit:contain;border-radius:12px}.brand{font-weight:900;letter-spacing:1.8px;font-size:17px;background:linear-gradient(90deg,var(--cyan),#668aff,var(--purple));color:transparent;background-clip:text}.sub{font-size:10px;letter-spacing:2px;color:var(--muted)}
+.actions{display:flex;gap:7px;flex-wrap:wrap;padding:12px}.btn{border:1px solid #344166;background:#151c33;color:var(--text);padding:10px 12px;border-radius:10px;font-weight:700}.primary{background:linear-gradient(110deg,#007cfa,#8a2bff);border:0}.tabs{display:flex;gap:7px;padding:0 12px}.tab{flex:1;border:1px solid var(--line);border-radius:9px;padding:11px 4px;background:#101426;color:var(--muted);font-weight:800}.tab.active{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 14px #00eaff22}
+.editor-wrap{padding:12px}textarea{width:100%;height:34vh;min-height:190px;resize:vertical;background:#080b16;color:#b9f9ff;border:1px solid #29375d;border-radius:12px;padding:14px;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;outline:none;tab-size:2}textarea:focus{border-color:var(--cyan);box-shadow:0 0 18px #00eaff18}
+.section-title{display:flex;justify-content:space-between;align-items:center;padding:2px 14px 10px;font-weight:800}.pill{font-size:10px;color:var(--cyan);border:1px solid #17687b;border-radius:20px;padding:4px 8px}iframe{width:calc(100% - 24px);height:32vh;min-height:190px;margin:0 12px 18px;border:1px solid var(--line);border-radius:12px;background:white}footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}#status{color:var(--cyan);font-size:11px;padding:0 14px 10px}
+</style></head>
+<body>
+<header><img class="logo" src="assets/apex-html-compiler-logo.svg" alt="APEX logo" onerror="this.style.display='none'"><div><div class="brand">APEX</div><div class="sub">HTML COMPILER</div></div></header>
+<div class="actions"><button class="btn primary" id="run">▶ RUN PREVIEW</button><button class="btn" id="save">SAVE</button><button class="btn" id="open">OPEN</button><button class="btn" id="export">EXPORT HTML</button><button class="btn" id="reset">RESET</button><input id="file" type="file" accept=".html,.htm,.txt" hidden></div>
+<div class="tabs"><button class="tab active" data-lang="html">HTML</button><button class="tab" data-lang="css">CSS</button><button class="tab" data-lang="js">JS</button></div>
+<div class="editor-wrap"><textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></div>
+<div id="status">Ready • Edit your code and run preview</div>
+<div class="section-title"><span>LIVE PREVIEW</span><span class="pill">SANDBOX VIEW</span></div><iframe id="preview" title="Live website preview" sandbox="allow-scripts allow-forms allow-modals"></iframe>
+<footer>APEX HTML COMPILER · CODE / PREVIEW / BUILD</footer>
+<script>
+const starter={html:'<!doctype html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1">\n  <title>My Website</title>\n</head>\n<body>\n  <main class="card">\n    <h1>Hello, APEX!</h1>\n    <p>Your website starts here.</p>\n    <button onclick="hello()">Click me</button>\n  </main>\n</body>\n</html>',css:'body {\n  margin: 0;\n  min-height: 100vh;\n  display: grid;\n  place-items: center;\n  background: #0b1020;\n  color: white;\n  font-family: system-ui, sans-serif;\n}\n.card { text-align: center; padding: 2rem; }\nbutton { padding: .8rem 1.2rem; border: 0; border-radius: 10px; background: #00d9ff; font-weight: bold; }',js:'function hello() {\n  alert("Hello from APEX!");\n}'};
+let code={...starter},lang='html';const editor=document.querySelector('#editor'),status=document.querySelector('#status');
+function setStatus(s){status.textContent=s}
+function switchLang(l){code[lang]=editor.value;lang=l;editor.value=code[l];document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.lang===l));editor.setAttribute('aria-label',l.toUpperCase()+' editor')}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchLang(b.dataset.lang));editor.value=code.html;
+function build(){code[lang]=editor.value;const doc=code.html.replace('</head>', '<style>'+code.css.replace(/<\/style/gi,'<\\/style')+'</style>\n</head>').replace('</body>','<script>'+code.js.replace(/<\/script/gi,'<\\/script')+'<\/script>\n</body>');document.querySelector('#preview').srcdoc=doc;setStatus('Preview refreshed · '+new Date().toLocaleTimeString())}
+document.querySelector('#run').onclick=build;
+document.querySelector('#save').onclick=()=>{code[lang]=editor.value;try{localStorage.setItem('apex-code',JSON.stringify(code));setStatus('Project saved on this device')}catch(e){setStatus('Local storage unavailable')}};
+document.querySelector('#open').onclick=()=>document.querySelector('#file').click();
+document.querySelector('#file').onchange=async e=>{const f=e.target.files[0];if(!f)return;code.html=await f.text();switchLang('html');setStatus('Opened '+f.name);build();e.target.value=''};
+document.querySelector('#export').onclick=()=>{code[lang]=editor.value;const html=code.html.replace('</head>','<style>'+code.css+'</style></head>').replace('</body>','<script>'+code.js+'<\/script></body>');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='apex-website.html';a.click();URL.revokeObjectURL(a.href);setStatus('HTML export created')};
+document.querySelector('#reset').onclick=()=>{if(confirm('Reset all editor code?')){code={...starter};switchLang(lang);build();setStatus('Starter template restored')}};
+try{const saved=localStorage.getItem('apex-code');if(saved)code={...starter,...JSON.parse(saved)}}catch(e){}switchLang('html');build();
+</script></body></html>
